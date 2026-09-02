@@ -1,0 +1,5 @@
+sounddevice==0.5.5
+vosk==0.3.45
+piper-tts==1.6.1
+numpy>=1.21.6
+pyserial>=3.5

@@ -1,0 +1,61 @@
+# ============================================================
+# ViosAssistant - Git ignore
+# Exclude: build artifacts, caches, toolchains, large voice/model
+# binaries, Python virtualenvs. NEVER delete these locally.
+# ============================================================
+
+# ---- Voice / speech / ML model binaries (keep on disk, exclude from Git) ----
+*.wav
+*.mp3
+*.onnx
+*.onnx.json
+*.fst
+*.zip
+# Vosk speech-recognition model directories (pre-trained models, not source)
+vosk-model*/
+# Vosk model binary/config component files
+*.mdl
+*.ie
+*.dubm
+*.mat
+*.stats
+
+# ---- Python virtual environments ----
+.venv/
+venv/
+
+# ---- PlatformIO build output ----
+.pio/
+
+# ---- ESP32 / build artifacts (bytecode, firmware, archives) ----
+*.bin
+*.elf
+*.o
+*.a
+*.map
+*.pyc
+*.axf
+*.blif
+
+# ---- makeEspArduino / Arduino CLI build dir ----
+build/
+core.a
+build/
+
+# ---- IDE / editor temporary files ----
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp
+*~
+
+# ---- OS / thumbnail files ----
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ---- Misc generated / log files ----
+*.log
+*.tmp
+*.bak
