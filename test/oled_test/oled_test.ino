@@ -31,16 +31,17 @@ void scanI2C() {
     Serial.println(hit ? "[I2C] OLED 0x3C DETECTED" : "[I2C] OLED 0x3C NOT DETECTED");
 }
 
-void showHeader() {
+void showHeader(bool i2c_ok) {
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-    display.println("ViosAssistant");
-    display.println("OLED HARDWARE TEST");
+    display.println("OLED TEST");
+    display.println("----------------");
+    display.print("I2C: "); display.println(i2c_ok ? "OK" : "FAIL");
+    display.print("ADDR: 0x"); display.println(OLED_ADDR, HEX);
+    display.print("DISPLAY: "); display.println(i2c_ok ? "OK" : "FAIL");
     display.println();
-    display.print("SDA: GPIO"); display.println(OLED_SDA);
-    display.print("SCL: GPIO"); display.println(OLED_SCL);
-    display.print("I2C: 0x");   display.println(OLED_ADDR, HEX);
+    display.print("128x64");
     display.display();
 }
 
@@ -54,9 +55,15 @@ void setup() {
 
     scanI2C();
 
+    // Check I2C for OLED
+    bool i2c_hit = false;
+    Wire.beginTransmission(OLED_ADDR);
+    i2c_hit = (Wire.endTransmission() == 0);
+
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
         oled_ok = false;
         Serial.println("[OLED] INIT FAIL: SSD1306 not responding at 0x3C");
+        // Try to show fail on display if possible
         return;
     }
     oled_ok = true;
@@ -64,7 +71,7 @@ void setup() {
 
     display.clearDisplay();
     display.setTextSize(1);
-    showHeader();
+    showHeader(i2c_hit);
     delay(1500);
 }
 
@@ -81,9 +88,13 @@ void loop() {
         count++;
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.println("TEST RUNNING");
-        display.print("COUNT: ");
-        display.println(count);
+        display.println("OLED TEST");
+        display.println("----------------");
+        display.println("I2C: OK");
+        display.print("ADDR: 0x"); display.println(OLED_ADDR, HEX);
+        display.println("DISPLAY: OK");
+        display.print("COUNT: "); display.println(count);
+        display.print("128x64");
         display.display();
         Serial.printf("[OLED] COUNT: %lu\r\n", count);
     }

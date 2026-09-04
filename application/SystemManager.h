@@ -38,6 +38,20 @@ public:
     void triggerWatchdog();
     bool isInitialized() const { return initialized_; }
     drivers::OledDriver& getOledDriver() { return oled_; }
+    drivers::UartDriver& getUartDriver() { return uart_; }
+    drivers::CanDriver& getCanDriver() { return can_; }
+    const drivers::UartDriver& getUartDriver() const { return uart_; }
+    const drivers::CanDriver& getCanDriver() const { return can_; }
+    // OLED debug getters (non-intrusive, read-only)
+    const services::ClimateController& getClimateController() const { return climate_ctrl_; }
+    const services::FanController& getFanController() const { return fan_ctrl_; }
+    const services::MotorPositionController& getMotorController() const { return motor_pos_ctrl_; }
+    int32_t getEncoderCount() const;
+    int getGpio10State() const;
+    int getNtc1Raw() const { return ntc1_raw_; }
+    int getNtc2Raw() const { return ntc2_raw_; }
+    float getNtc1Voltage() const { return ntc1_voltage_; }
+    float getNtc2Voltage() const { return ntc2_voltage_; }
 
 private:
     bool initialized_ = false;
@@ -69,6 +83,11 @@ private:
     uint32_t last_climate_ms_ = 0;
     uint32_t last_vehicle_ms_ = 0;
     uint32_t last_watchdog_ms_ = 0;
+    // Raw sensor cache for OLED debug (non-intrusive)
+    int ntc1_raw_ = 0;
+    int ntc2_raw_ = 0;
+    float ntc1_voltage_ = 0.0f;
+    float ntc2_voltage_ = 0.0f;
 };
 
 } // namespace application

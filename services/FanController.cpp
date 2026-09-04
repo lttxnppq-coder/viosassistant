@@ -51,4 +51,44 @@ bool FanController::isEnabled() const {
     return enabled_;
 }
 
+void FanController::setLevel(uint8_t level) {
+    // PROPOSED mapping Level 1-5 -> PWM, REQUIRES CONFIRMATION
+    // 0 -> 0, 1->51,2->102,3->153,4->204,5->255
+    if (level == 0) {
+        setSpeed(0);
+        is_on_ = false;
+        return;
+    }
+    if (level > 5) level = 5;
+    uint8_t pwm = level * 51; // 51,102,153,204,255
+    if (level == 5) pwm = 255;
+    last_level_ = pwm;
+    is_on_ = true;
+    setSpeed(pwm);
+}
+
+uint8_t FanController::getLevel() const {
+    // Inverse map PWM -> Level 1-5 (approx)
+    if (current_speed_ == 0) return 0;
+    uint8_t lvl = (current_speed_ + 25) / 51;
+    if (lvl < 1) lvl = 1;
+    if (lvl > 5) lvl = 5;
+    return lvl;
+}
+
+void FanController::fanOff() {
+    if (current_speed_ > 0 || target_speed_ > 0) {
+        last_level_ = (target_speed_ > 0) ? target_speed_ : current_speed_;
+        if (last_level_ == 0) last_level_ = 128;
+    }
+    is_on_ = false;
+    setSpeed(0);
+}
+
+void FanController::fanOn() {
+    is_on_ = true;
+    if (last_level_ == 0) last_level_ = 128;
+    setSpeed(last_level_);
+}
+
 } // namespace services

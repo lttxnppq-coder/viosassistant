@@ -21,7 +21,8 @@ constexpr uint16_t VEHICLE_DATA_ID_BASE = 0x100;
 constexpr uint16_t CLIMATE_CMD_ID_BASE = 0x200;
 constexpr uint16_t SYSTEM_CMD_ID_BASE = 0x300;
 
-constexpr uint8_t CRC16_POLY = 0x8005;
+constexpr uint16_t CRC16_POLY = 0x8005;
 constexpr uint16_t CRC16_INIT = 0xFFFF;
+constexpr uint16_t CRC16_XOR_OUT = 0x0000;
 
 } // namespace ProtocolConfig

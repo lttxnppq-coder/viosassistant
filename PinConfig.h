@@ -103,3 +103,10 @@
 #define PIN_ENC_A           19  // GA25 Encoder A (quadrature)
 #define PIN_ENC_B           20  // GA25 Encoder B (quadrature)
 // PIN_ENC_BTN not used - GA25 has no push button
+
+// ------------------------------------------------------------
+// OLED Button - Page Switch (user decision 2026-09)
+// ------------------------------------------------------------
+#define PIN_OLED_BUTTON     35  // OLED page button, active LOW with INPUT_PULLUP
+// Wiring: GPIO35 -> Button -> GND, use INPUT_PULLUP, debounce 30-50ms
+// Do NOT use GPIO10 (PIN_ON_OFF_INPUT reserved)

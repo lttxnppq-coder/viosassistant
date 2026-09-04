@@ -1,6 +1,17 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
 
 // TEST 07 - Motor Driver / H-Bridge (DRV8833 Parallel Mode)
+
+// OLED SSD1306 128x64 I2C 0x3C SDA8 SCL9
+#define OLED_SDA 8
+#define OLED_SCL 9
+#define OLED_ADDR 0x3C
+#define OLED_W 128
+#define OLED_H 64
+Adafruit_SSD1306 display(OLED_W, OLED_H, &Wire, -1);
+bool oled_ok = false;
 // Phu hop: ESP32-S3
 // Pin theo PinConfig.h: PIN_MOTOR_IN1=13, PIN_MOTOR_IN2=14
 // API theo drivers/MotorDriver:
@@ -68,6 +79,35 @@ void printStatus() {
                   PIN_IN1, PIN_IN2);
 }
 
+void updateOled() {
+    if (!oled_ok) return;
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("MOTOR TEST");
+    display.println("----------------");
+    char buf[32];
+    snprintf(buf, sizeof(buf), "CMD:%d", current_speed);
+    display.println(buf);
+    // PWM from current_speed
+    int pwm = 0;
+    if (current_speed != 0) pwm = map(abs(current_speed), 0, SPEED_MAX, 0, PWM_MAX_DUTY);
+    snprintf(buf, sizeof(buf), "PWM:%d", pwm);
+    display.println(buf);
+    const char* dir = (current_speed > 0) ? "CW" : (current_speed < 0) ? "CCW" : "STOP";
+    const char* state = (current_speed == 0) ? "STOP" : "RUN";
+    snprintf(buf, sizeof(buf), "DIR:%s", dir);
+    display.println(buf);
+    display.print("STATE:");
+    display.println(state);
+    // IN1/IN2
+    snprintf(buf, sizeof(buf), "IN1:%d IN2:%d", digitalRead(PIN_IN1), digitalRead(PIN_IN2));
+    display.setCursor(0, 56);
+    display.print(buf);
+    display.display();
+}
+
 void printHelp() {
     Serial.println("[CMD] F<speed> : forward 0..1000");
     Serial.println("[CMD] B<speed> : backward 0..1000");
@@ -92,15 +132,41 @@ void setup() {
     digitalWrite(PIN_IN1, LOW);
     digitalWrite(PIN_IN2, LOW);
 
+    // OLED init
+    Wire.begin(OLED_SDA, OLED_SCL);
+    if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+        oled_ok = false;
+        Serial.println("[OLED] INIT FAIL");
+    } else {
+        oled_ok = true;
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0, 0);
+        display.println("MOTOR TEST");
+        display.println("----------------");
+        display.println("INIT");
+        display.display();
+        Serial.println("[OLED] INIT PASS");
+    }
+
     if (!ledcAttach(PIN_IN1, PWM_FREQ_HZ, PWM_RES_BITS) ||
         !ledcAttach(PIN_IN2, PWM_FREQ_HZ, PWM_RES_BITS)) {
         Serial.println("[MOTOR] ERROR: ledcAttach failed");
+        if (oled_ok) {
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.println("MOTOR TEST");
+            display.println("ERROR: ledcAttach");
+            display.display();
+        }
         return;
     }
     ledcWrite(PIN_IN1, 0);
     ledcWrite(PIN_IN2, 0);
     Serial.println("[MOTOR] PWM OK - motor coasting");
     printHelp();
+    updateOled();
 }
 
 void loop() {
@@ -119,12 +185,16 @@ void loop() {
             motorApply(signed_speed);
             Serial.printf("[MOTOR] %s speed=%d\r\n",
                           (signed_speed < 0) ? "BACKWARD" : "FORWARD", speed);
+            updateOled();
         } else if (input == "S") {
             coast();
+            updateOled();
         } else if (input == "BR") {
             brake();
+            updateOled();
         } else if (input == "ST") {
             printStatus();
+            updateOled();
         } else if (input == "H") {
             printHelp();
         } else {

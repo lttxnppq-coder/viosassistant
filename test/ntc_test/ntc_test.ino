@@ -95,24 +95,32 @@ void showOled(const NtcSample& s1, const NtcSample& s2) {
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
     display.println("NTC TEST");
-
+    display.println("----------------");
+    char buf[32];
     if (s1.status == STATUS_OK) {
-        display.print("NTC1: "); display.println(s1.temp_c, 1);
+        snprintf(buf, sizeof(buf), "N1 %.1f C", s1.temp_c);
+        display.println(buf);
+        snprintf(buf, sizeof(buf), "RAW %d", s1.raw);
+        display.println(buf);
+        snprintf(buf, sizeof(buf), "V %.2fV", s1.voltage);
+        display.println(buf);
     } else {
-        display.println("NTC1: ERR");
+        display.println("N1: ERR");
+        snprintf(buf, sizeof(buf), "RAW %d", s1.raw);
+        display.println(buf);
     }
-    display.print("RAW1: "); display.println(s1.raw);
-
     if (s2.status == STATUS_OK) {
-        display.print("NTC2: "); display.println(s2.temp_c, 1);
+        snprintf(buf, sizeof(buf), "N2 %.1f C", s2.temp_c);
+        display.println(buf);
+        snprintf(buf, sizeof(buf), "RAW %d", s2.raw);
+        display.println(buf);
+        snprintf(buf, sizeof(buf), "V %.2fV", s2.voltage);
+        display.println(buf);
     } else {
-        display.println("NTC2: ERR");
+        display.println("N2: ERR");
+        snprintf(buf, sizeof(buf), "RAW %d", s2.raw);
+        display.println(buf);
     }
-    display.print("RAW2: "); display.println(s2.raw);
-
-    display.print(oled_ok ? "OLED: OK" : "OLED: INIT FAIL");
-    display.setCursor(0, 56);
-    display.print(adc_ok ? "ADC: OK" : "ADC: ERROR");
     display.display();
 }
 

@@ -22,6 +22,13 @@ private:
     static void drawClimateScreen();
     static void drawVehicleScreen();
     static void drawStatusScreen();
+    static void drawCommCheckScreen();
+    static void drawButtonDebugScreen();
+    static void checkButton();
+    static uint8_t currentPage_;
+    static uint8_t lastButtonState_;
+    static uint32_t lastDebounceMs_;
+    static uint32_t lastButtonPressMs_;
 };
 
 } // namespace rtos

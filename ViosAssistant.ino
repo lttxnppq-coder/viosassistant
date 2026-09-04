@@ -20,11 +20,11 @@ void setup() {
         while (1) { delay(1000); }
     }
 
-    if (!response_manager.begin()) {
+    if (!response_manager.begin(&system_manager.getUartDriver())) {
         LOG_ERROR("MAIN", "ResponseManager init failed!");
     }
 
-    if (!rtos::CommunicationTask::begin(&system_manager, nullptr, nullptr)) {
+    if (!rtos::CommunicationTask::begin(&system_manager, &system_manager.getCanDriver(), &system_manager.getUartDriver(), &response_manager)) {
         LOG_WARN("MAIN", "CommunicationTask init failed!");
     }
 

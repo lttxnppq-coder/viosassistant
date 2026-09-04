@@ -59,3 +59,18 @@ desktop.ini
 *.log
 *.tmp
 *.bak
+
+# ---- Additional ignores (BUILD 04.7 audit) ----
+.pioenvs/
+.piolibdeps/
+*.hex
+*.lst
+*.sym
+*.d
+build_*/
+__pycache__/
+.pytest_cache/
+.cache/
+.env
+.env.local
+credentials.json

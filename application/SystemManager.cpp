@@ -126,8 +126,26 @@ void SystemManager::update() {
     vehicle_data_svc_.update();
     vehicle_data_ = vehicle_data_svc_.getData();
 
-    temp_data_.inside_temp_c = ntc_.readTemperatureC(PIN_NTC1_ADC);
-    temp_data_.outside_temp_c = ntc_.readTemperatureC(PIN_NTC2_ADC);
+    // Cache raw ADC for OLED debug (non-intrusive)
+    ntc1_raw_ = analogRead(PIN_NTC1_ADC);
+    ntc2_raw_ = analogRead(PIN_NTC2_ADC);
+    ntc1_voltage_ = ntc1_raw_ * 3.3f / 4095.0f;
+    ntc2_voltage_ = ntc2_raw_ * 3.3f / 4095.0f;
+    {
+        float tInside = ntc_.readTemperatureC(PIN_NTC1_ADC);
+        float tOutside = ntc_.readTemperatureC(PIN_NTC2_ADC);
+        temp_data_.inside_temp_c = tInside;
+        temp_data_.outside_temp_c = tOutside;
+        // Valid if: NTC driver initialized, raw not floating (not 0/4095), voltage in plausible range, temperature in SystemConfig range
+        // KHONG hardcode true — chi true khi sensor hop le
+        bool insideOk = ntc_.isInitialized() && ntc1_raw_ > 10 && ntc1_raw_ < 4085 && ntc1_voltage_ > 0.05f && ntc1_voltage_ < 3.25f && tInside > SystemConfig::TEMP_MIN_C && tInside < SystemConfig::TEMP_MAX_C;
+        bool outsideOk = ntc_.isInitialized() && ntc2_raw_ > 10 && ntc2_raw_ < 4085 && ntc2_voltage_ > 0.05f && ntc2_voltage_ < 3.25f && tOutside > SystemConfig::TEMP_MIN_C && tOutside < SystemConfig::TEMP_MAX_C;
+        // Additional guard: 0.0f from resistanceToTemp indicates open/short (voltage==0 or resistance<=0)
+        if (tInside == 0.0f && ntc1_voltage_ <= 0.05f) insideOk = false;
+        if (tOutside == 0.0f && ntc2_voltage_ <= 0.05f) outsideOk = false;
+        temp_data_.inside_valid = insideOk;
+        temp_data_.outside_valid = outsideOk;
+    }
     // PIN_NTC_EVAP and PIN_NTC_AMB not defined in new pin map - commented out
     // temp_data_.evaporator_temp_c = ntc_.readTemperatureC(PIN_NTC_EVAP);
     // temp_data_.ambient_temp_c = ntc_.readTemperatureC(PIN_NTC_AMB);
@@ -171,11 +189,27 @@ void SystemManager::handleCommand(const model::Command& cmd, model::CommandRespo
             if (cmd.payload_len >= 2) {
                 float temp = (cmd.payload[0] + cmd.payload[1] * 0.1f);
                 climate_ctrl_.setTemperature(temp);
+            } else if (cmd.payload_len == 1) {
+                // Single byte absolute 23-30 from Jetson (FROZEN 23-30)
+                float temp = (float)cmd.payload[0];
+                climate_ctrl_.setTemperature(temp);
             }
             break;
         case model::CommandType::SET_FAN_SPEED:
-            if (cmd.payload_len >= 1) {
-                fan_ctrl_.setSpeed(cmd.payload[0]);
+            if (cmd.payload_len == 0) {
+                // FAN ON (6) restore last level
+                fan_ctrl_.fanOn();
+            } else if (cmd.payload_len >= 1) {
+                uint8_t v = cmd.payload[0];
+                if (v == 0) {
+                    // FAN OFF (7)
+                    fan_ctrl_.fanOff();
+                } else if (v <= 5) {
+                    // Level 1-5 from Jetson 101-105 (H03, PROPOSED)
+                    fan_ctrl_.setLevel(v);
+                } else {
+                    fan_ctrl_.setSpeed(v);
+                }
             }
             break;
         case model::CommandType::SET_AIR_MODE:
@@ -233,6 +267,15 @@ model::SystemMode SystemManager::getSystemMode() const {
 void SystemManager::triggerWatchdog() {
     last_watchdog_ms_ = millis();
     system_state_.watchdog_ok = true;
+}
+
+int32_t SystemManager::getEncoderCount() const {
+    return encoder_.isInitialized() ? encoder_.getPosition() : 0;
+}
+
+int SystemManager::getGpio10State() const {
+    // No production pinMode for GPIO10; read current level (may float if no pull)
+    return digitalRead(PIN_ON_OFF_INPUT);
 }
 
 } // namespace application
